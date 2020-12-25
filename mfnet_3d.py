@@ -12,7 +12,7 @@ try:
     from . import initialize
 except:
     import initialize
-#from torchsummary import summary
+# from torchsummary import summary
 
 #################################################R(2+1)D########################################################
 class R2P1D(nn.Module):
@@ -337,11 +337,17 @@ class MFNET_3D(nn.Module):
         # conv1 - x224 (x16)
         conv1_num_out = 16
         self.conv1 = nn.Sequential(OrderedDict([
-                    ('conv', nn.Conv3d( 3, conv1_num_out, kernel_size=(3,5,5), padding=(1,2,2), stride=(1,2,2), bias=False)),
+                    ('conv', nn.Conv3d( 3, conv1_num_out, kernel_size=(3,1,1), padding=(1,0,0), stride=(1,1,1), bias=False)),
                     ('bn', nn.BatchNorm3d(conv1_num_out)),
                     ('relu', nn.ReLU(inplace=True))
                     ]))
-        self.maxpool = nn.MaxPool3d(kernel_size=(1,3,3), stride=(1,2,2), padding=(0,1,1))
+        self.conv_ = nn.Sequential(OrderedDict([
+            ('conv',
+             nn.Conv3d(conv1_num_out, conv1_num_out, kernel_size=(3, 5, 5), padding=(1, 2, 2), stride=(1, 2, 2), bias=False)),
+            ('bn', nn.BatchNorm3d(conv1_num_out)),
+            ('relu', nn.ReLU(inplace=True))
+        ]))
+        # self.maxpool = nn.MaxPool3d(kernel_size=(1,3,3), stride=(1,2,2), padding=(0,1,1))
 
         # conv2 - x56 (x8)
         num_mid = 96
@@ -408,18 +414,19 @@ class MFNET_3D(nn.Module):
     def forward(self, x):
         #assert x.shape[2] == 16
         
-        h = self.conv1(x)   # x224 -> x112
-        h = self.maxpool(h) # x112 ->  x56
+        h = self.conv1(x)   # x112 -> x112
+        h = self.conv_(h)   # 112 -> 56
+        # h = self.maxpool(h) # x112 ->  x56
 
         h = self.conv2(h)   #  x56 ->  x56
         h = self.conv3(h)   #  x56 ->  x28
         h = self.conv4(h)   #  x28 ->  x14
         h = self.convRes2(h)
         h = self.conv5(h)   #  x14 ->   x7
-        
+
 
         #h=self.conv_lstm(h)
-        
+
         h = self.tail(h)
         h = self.globalpool(h)
 
@@ -432,9 +439,9 @@ if __name__ == "__main__":
     import torch
     logging.getLogger().setLevel(logging.DEBUG)
     # ---------
-    net = MFNET_3D(num_classes=100, pretrained=False,batch_size=2)
-    data = torch.autograd.Variable(torch.randn(2,3,16,224,224))
+    net = MFNET_3D(num_classes=174, pretrained=False,batch_size=2)
+    data = torch.autograd.Variable(torch.randn(2,3,16,112,112))
     output= net(data)
     print (output.shape)
-    summary(net,input_size=(3,16,224,224))
+    # summary(net,input_size=(3,16,224,224))
 

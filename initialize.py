@@ -51,11 +51,13 @@ def init_from_dict(net, model_path, device_state='cpu',Flags=False):
         
             if state=='state_dict':
                 for name,param in name_list.items():
-                    # name=name.replace('module.','')
-                     if name in net_state_keys:
-                        print(name)
+
+                    name=name.replace('module.','')
+                    if name in net_state_keys:
+
                         dst_param_shape = net.state_dict()[name].shape
                         if param.shape == dst_param_shape:
+                            print(name)
                             net.state_dict()[name].copy_(param.view(dst_param_shape))
                             net_state_keys.remove(name)
     

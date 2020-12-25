@@ -6,6 +6,7 @@
 import timeit
 from datetime import datetime
 import socket
+import time
 import os
 import glob
 from tqdm import tqdm
@@ -29,12 +30,15 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print("Device being used:", device)
 
 N_EPOCHS = 100  # Number of epochs for training
-BATCH_SIZE=16
+BATCH_SIZE=32
 LR = 5e-2 # Learning rate
 PRE_TRAINED=True
 Model_path='models/MFNet3D_Kinetics-400_72.8.pth'
 save_dir_root = os.path.join(os.path.abspath('.'))
-save_dir_models=os.path.join(save_dir_root,'models')
+time = time.localtime(time.time())
+date = str(time.tm_year)+'-'+str(time.tm_mon)+'-'+str(time.tm_mday)+'-'+str(time.tm_hour)+'-'+str(time.tm_min)
+
+save_dir_models=os.path.join(save_dir_root,'models/'+date)
 if not os.path.exists(save_dir_models):
     os.makedirs(save_dir_models)
 save_dir_logs=os.path.join(save_dir_root,'logs')
@@ -59,7 +63,7 @@ if PRE_TRAINED:
 	print('loaded pretrained model')
 writer = SummaryWriter(log_dir=save_dir_logs)
 train_dataloader = DataLoader(Image_Dataset('train_num2label.txt'), batch_size=BATCH_SIZE, shuffle=True, num_workers=4)
-val_dataloader   = DataLoader(Image_Dataset('val_num2label.txt'), batch_size=BATCH_SIZE, num_workers=4)
+val_dataloader   = DataLoader(Image_Dataset('val_num2label.txt',action='val' ), batch_size=BATCH_SIZE, num_workers=4)
 test_dataloader  = DataLoader(Image_Dataset('test_num2label.txt'), batch_size=BATCH_SIZE, num_workers=4)
 
 trainval_loaders = {'train': train_dataloader, 'val': val_dataloader}
@@ -120,11 +124,7 @@ for epoch in range(0, N_EPOCHS):
         else:
             writer.add_scalar('data/val_loss_epoch', epoch_loss, epoch)
             writer.add_scalar('data/val_acc_epoch', epoch_acc, epoch)
-        
-    
-   
-    if epoch % 10 == 0:
-        torch.save(model.state_dict(),os.path.join(save_dir_models,'trained_model.pkl'))
-        print('model saved')
+            torch.save(model.state_dict(),os.path.join(save_dir_models,str(epoch_acc)+'_trained_model.pkl'))
+            print('model saved')
 writer.close()
 

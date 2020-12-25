@@ -18,7 +18,7 @@ def input_transform(crop_size, upscale_factor):
     ])
 
 class Image_Dataset(Dataset):
-    def __init__(self, train_path , clip_len=16,action='train',frame_sample_rate=1, crop_size=224):
+    def __init__(self, train_path , clip_len=16,action='train',frame_sample_rate=1, crop_size=112):
         
         root_dir = 'video'
         self.clip_len=clip_len
@@ -79,7 +79,8 @@ class Image_Dataset(Dataset):
 
         buffer = self.to_numpy(buffer)
 
-        buffer = self.random_erasing(buffer)
+        if self.action == 'train':
+            buffer = self.random_erasing(buffer)
 
         
         # if self.action == 'train':
